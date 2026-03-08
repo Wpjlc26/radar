@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رادار — فحص الروابط الأمني</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ────────────────────────────────────────────
+   TOKENS
+──────────────────────────────────────────── */
+:root{
+  --ink:#0b0f1a;
+  --ink2:#141928;
+  --ink3:#1c2436;
+  --line:#ffffff0f;
+  --line2:#ffffff18;
+  --mist:#ffffff06;
+  --azure:#2563eb;
+  --azure-glow:rgba(37,99,235,.35);
+  --sky:#38bdf8;
+  --sky-glow:rgba(56,189,248,.2);
+  --mint:#10b981;
+  --mint-glow:rgba(16,185,129,.25);
+  --rose:#f43f5e;
+  --rose-glow:rgba(244,63,94,.25);
+  --amber:#f59e0b;
+  --amber-glow:rgba(245,158,11,.25);
+  --white:#ffffff;
+  --t1:rgba(255,255,255,.92);
+  --t2:rgba(255,255,255,.55);
+  --t3:rgba(255,255,255,.28);
+  --t4:rgba(255,255,255,.1);
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+  --r-xl:24px;
+  --r-pill:100px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ────────────────────────────────────────────
+   RESET
+──────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:'Cairo',sans-serif;
+  background:var(--ink);
+  color:var(--t1);
+  line-height:1.6;
+  overflow-x:hidden;
+  min-height:100vh;
+}
+::selection{background:var(--azure);color:#fff}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--ink)}
+::-webkit-scrollbar-thumb{background:var(--ink3);border-radius:2px}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:'Cairo',sans-serif}
+img{display:block}
+
+/* ────────────────────────────────────────────
+   CANVAS BACKGROUND
+──────────────────────────────────────────── */
+#bg-canvas{
+  position:fixed;inset:0;z-index:0;
+  pointer-events:none;
+}
+
+/* ────────────────────────────────────────────
+   LAYOUT WRAPPER
+──────────────────────────────────────────── */
+.page{position:relative;z-index:1}
+
+/* ────────────────────────────────────────────
+   NAV
+──────────────────────────────────────────── */
+.nav{
+  position:fixed;top:0;inset-inline:0;z-index:900;
+  height:64px;
+  display:flex;align-items:center;
+  padding:0 2rem;
+  background:rgba(11,15,26,.7);
+  backdrop-filter:blur(20px) saturate(1.6);
+  -webkit-backdrop-filter:blur(20px) saturate(1.6);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{
+  max-width:1280px;width:100%;margin:0 auto;
+  display:flex;align-items:center;gap:2rem;
+}
+.nav-logo{
+  display:flex;align-items:center;gap:.625rem;
+  flex-shrink:0;
+}
+.logo-mark{
+  width:34px;height:34px;
+  background:linear-gradient(135deg,var(--azure),var(--sky));
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;
+  box-shadow:0 0 0 1px rgba(56,189,248,.3),0 4px 16px var(--azure-glow);
+  position:relative;overflow:hidden;
+}
+.logo-mark::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.25),transparent 60%);
+}
+.logo-name{
+  font-size:1.2rem;font-weight:800;letter-spacing:-.5px;
+  color:var(--t1);
+}
+.logo-name em{color:var(--sky);font-style:normal}
+.logo-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--mint);margin-inline-start:.5rem;margin-top:6px;
+  animation:dot-blink 2s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes dot-blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+
+.nav-links{
+  display:flex;align-items:center;gap:.25rem;
+  list-style:none;flex:1;
+}
+.nav-links a{
+  font-size:.875rem;font-weight:500;color:var(--t2);
+  padding:.4rem .875rem;border-radius:var(--r-sm);
+  transition:color .15s,background .15s;
+}
+.nav-links a:hover,.nav-links a.on{color:var(--t1);background:var(--t4)}
+
+.nav-right{display:flex;align-items:center;gap:.75rem;margin-inline-start:auto}
+.nav-badge{
+  font-size:.72rem;font-weight:700;
+  padding:.2rem .7rem;border-radius:var(--r-pill);
+  background:rgba(16,185,129,.12);
+  border:1px solid rgba(16,185,129,.25);
+  color:var(--mint);letter-spacing:.3px;
+  display:flex;align-items:center;gap:.375rem;
+}
+.nav-badge::before{
+  content:'';width:5px;height:5px;
+  border-radius:50%;background:var(--mint);
+  animation:dot-blink 2s ease-in-out infinite;
+}
+.btn-scan-nav{
+  height:36px;padding:0 1.25rem;
+  background:var(--azure);color:#fff;
+  border:none;border-radius:var(--r-sm);
+  font-size:.875rem;font-weight:700;
+  transition:all .2s var(--ease);
+  box-shadow:0 2px 12px var(--azure-glow);
+  display:flex;align-items:center;gap:.375rem;
+}
+.btn-scan-nav:hover{
+  background:#1d4ed8;
+  transform:translateY(-1px);
+  box-shadow:0 6px 20px var(--azure-glow);
+}
+
+/* ────────────────────────────────────────────
+   HERO
+──────────────────────────────────────────── */
+.hero{
+  padding:140px 2rem 80px;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero-noise{
+  position:absolute;inset:0;opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  pointer-events:none;
+}
+.hero-glow{
+  position:absolute;
+  top:-200px;left:50%;transform:translateX(-50%);
+  width:800px;height:600px;
+  background:radial-gradient(ellipse at 50% 40%,rgba(37,99,235,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{max-width:760px;margin:0 auto;position:relative;z-index:1}
+
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(37,99,235,.08);
+  border:1px solid rgba(37,99,235,.22);
+  border-radius:var(--r-pill);
+  padding:.3rem 1rem;
+  font-size:.78rem;font-weight:700;
+  color:var(--sky);
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  margin-bottom:1.75rem;
+  animation:fade-up .6s var(--ease) both;
+}
+.eyebrow-icon{font-size:.85rem}
+
+.hero-h1{
+  font-size:clamp(2.4rem,5.5vw,3.75rem);
+  font-weight:900;
+  color:var(--white);
+  line-height:1.13;
+  letter-spacing:-1.5px;
+  margin-bottom:1.5rem;
+  animation:fade-up .6s var(--ease) .08s both;
+}
+.hero-h1 .grad{
+  background:linear-gradient(135deg,#60a5fa 0%,var(--sky) 50%,#a78bfa 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.hero-sub{
+  font-size:1.05rem;font-weight:400;
+  color:var(--t2);max-width:520px;
+  margin:0 auto 3rem;line-height:1.8;
+  animation:fade-up .6s var(--ease) .16s both;
+}
+
+@keyframes fade-up{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ────────────────────────────────────────────
+   SCAN BOX
+──────────────────────────────────────────── */
+.scan-box{
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--line2);
+  border-radius:var(--r-xl);
+  padding:1.75rem;
+  max-width:680px;
+  margin:0 auto;
+  animation:fade-up .6s var(--ease) .24s both;
+  box-shadow:0 0 0 1px rgba(255,255,255,.03),
+             0 32px 64px rgba(0,0,0,.35),
+             inset 0 1px 0 rgba(255,255,255,.06);
+}
+.scan-label{
+  text-align:right;
+  font-size:.72rem;font-weight:700;
+  color:var(--t3);text-transform:uppercase;
+  letter-spacing:1.2px;margin-bottom:.75rem;
+}
+.scan-row{display:flex;gap:.625rem;margin-bottom:.875rem}
+.scan-input{
+  flex:1;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid var(--line2);
+  border-radius:var(--r-md);
+  padding:.875rem 1.125rem;
+  color:var(--white);
+  font-family:'Fira Code',monospace;
+  font-size:.85rem;
+  outline:none;
+  transition:border-color .2s,background .2s,box-shadow .2s;
+  direction:ltr;text-align:left;
+}
+.scan-input::placeholder{
+  color:var(--t3);
+  font-family:'Cairo',sans-serif;
+  direction:rtl;text-align:right;
+}
+.scan-input:focus{
+  border-color:rgba(56,189,248,.5);
+  background:rgba(255,255,255,.07);
+  box-shadow:0 0 0 3px rgba(56,189,248,.1);
+}
+.scan-btn{
+  height:48px;padding:0 1.75rem;
+  background:linear-gradient(135deg,var(--azure),#1d4ed8);
+  color:#fff;border:none;
+  border-radius:var(--r-md);
+  font-size:.95rem;font-weight:800;
+  white-space:nowrap;
+  transition:all .2s var(--ease);
+  box-shadow:0 4px 20px var(--azure-glow);
+  display:flex;align-items:center;gap:.5rem;
+  position:relative;overflow:hidden;
+}
+.scan-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.15),transparent 60%);
+  pointer-events:none;
+}
+.scan-btn:hover:not(:disabled){
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px var(--azure-glow);
+}
+.scan-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+.scan-hints{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:.75rem;color:var(--t3);flex-wrap:wrap;gap:.5rem;
+}
+.scan-hints-right{display:flex;gap:1.25rem}
+.scan-hints-right span{display:flex;align-items:center;gap:.3rem}
+
+.scan-error{
+  display:none;align-items:center;gap:.5rem;
+  background:rgba(244,63,94,.08);
+  border:1px solid rgba(244,63,94,.25);
+  border-radius:var(--r-sm);
+  padding:.5rem .875rem;
+  font-size:.8rem;color:#fda4af;
+  margin-top:.75rem;
+}
+.scan-error.on{display:flex}
+
+/* ────────────────────────────────────────────
+   TRUST STRIP
+──────────────────────────────────────────── */
+.trust-strip{
+  padding:2.5rem 2rem;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  background:var(--mist);
+}
+.trust-strip-inner{
+  max-width:1280px;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  gap:0;flex-wrap:wrap;
+}
+.trust-item{
+  display:flex;align-items:center;gap:.625rem;
+  padding:.5rem 2rem;
+  border-right:1px solid var(--line);
+  font-size:.82rem;font-weight:600;color:var(--t2);
+  white-space:nowrap;
+}
+.trust-item:last-child{border-right:none}
+.trust-item-icon{
+  width:30px;height:30px;
+  border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.875rem;
+  flex-shrink:0;
+}
+
+/* ────────────────────────────────────────────
+   LOADING
+──────────────────────────────────────────── */
+.loading-zone{
+  display:none;
+  padding:0 2rem;
+  background:var(--mist);
+}
+.loading-zone.on{display:block}
+.loading-card{
+  max-width:680px;margin:0 auto;
+  padding:2rem;
+  background:var(--ink2);
+  border:1px solid var(--line2);
+  border-radius:var(--r-xl);
+  transform:translateY(-28px);
+  box-shadow:0 32px 64px rgba(0,0,0,.3);
+}
+.lc-top{
+  display:flex;align-items:center;gap:1rem;
+  margin-bottom:1.5rem;
+  padding-bottom:1.25rem;
+  border-bottom:1px solid var(--line);
+}
+.lc-spin{
+  width:40px;height:40px;flex-shrink:0;
+  border:2.5px solid var(--ink3);
+  border-top-color:var(--azure);
+  border-right-color:var(--sky);
+  border-radius:50%;
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lc-title{font-size:.95rem;font-weight:700;color:var(--t1)}
+.lc-url{
+  font-size:.72rem;color:var(--t3);
+  font-family:'Fira Code',monospace;
+  margin-top:.2rem;direction:ltr;text-align:left;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  max-width:460px;
+}
+.lc-steps{display:flex;flex-direction:column;gap:.5rem}
+.lc-step{
+  display:flex;align-items:center;gap:.875rem;
+  padding:.6rem .875rem;
+  border-radius:var(--r-sm);
+  font-size:.82rem;color:var(--t3);
+  border:1px solid transparent;
+  transition:all .25s var(--ease);
+}
+.lc-step.on{
+  background:rgba(37,99,235,.08);
+  border-color:rgba(37,99,235,.2);
+  color:var(--sky);font-weight:600;
+}
+.lc-step.done{
+  background:rgba(16,185,129,.06);
+  border-color:rgba(16,185,129,.18);
+  color:var(--mint);
+}
+.lc-n{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--ink3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;font-weight:700;flex-shrink:0;
+  transition:all .25s;
+}
+.lc-step.on .lc-n{background:var(--azure);color:#fff}
+.lc-step.done .lc-n{background:var(--mint);color:#fff}
+.lc-bar{
+  height:3px;background:var(--ink3);
+  border-radius:2px;margin-top:1.25rem;overflow:hidden;
+}
+.lc-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--azure),var(--sky));
+  border-radius:2px;
+  transition:width .4s var(--ease);
+}
+
+/* ────────────────────────────────────────────
+   RESULTS
+──────────────────────────────────────────── */
+.results{
+  display:none;
+  padding:0 2rem 5rem;
+}
+.results.on{display:block}
+.results-inner{max-width:1280px;margin:0 auto}
+
+/* VERDICT */
+.verdict{
+  border-radius:var(--r-xl);
+  padding:2rem 2.5rem;
+  margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:2rem;
+  border:1px solid;
+  position:relative;overflow:hidden;
+  animation:fade-up .4s var(--ease) both;
+}
+.verdict::before{
+  content:'';position:absolute;
+  top:-60px;right:-60px;
+  width:220px;height:220px;
+  border-radius:50%;opacity:.06;
+  pointer-events:none;
+}
+.verdict.safe{
+  background:rgba(16,185,129,.05);
+  border-color:rgba(16,185,129,.22);
+}
+.verdict.safe::before{background:var(--mint)}
+.verdict.warn{
+  background:rgba(245,158,11,.05);
+  border-color:rgba(245,158,11,.22);
+}
+.verdict.warn::before{background:var(--amber)}
+.verdict.danger{
+  background:rgba(244,63,94,.05);
+  border-color:rgba(244,63,94,.22);
+}
+.verdict.danger::before{background:var(--rose)}
+
+.verdict-emblem{
+  width:72px;height:72px;
+  border-radius:var(--r-lg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;flex-shrink:0;
+  position:relative;
+}
+.verdict.safe .verdict-emblem{background:rgba(16,185,129,.12)}
+.verdict.warn .verdict-emblem{background:rgba(245,158,11,.12)}
+.verdict.danger .verdict-emblem{background:rgba(244,63,94,.12)}
+
+.verdict-body{flex:1}
+.verdict-tag{
+  display:inline-flex;align-items:center;gap:.375rem;
+  font-size:.7rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.8px;
+  padding:.22rem .7rem;border-radius:var(--r-pill);
+  margin-bottom:.625rem;
+}
+.verdict.safe .verdict-tag{background:rgba(16,185,129,.15);color:#34d399}
+.verdict.warn .verdict-tag{background:rgba(245,158,11,.15);color:#fcd34d}
+.verdict.danger .verdict-tag{background:rgba(244,63,94,.15);color:#fda4af}
+
+.verdict-title{
+  font-size:1.5rem;font-weight:800;
+  letter-spacing:-.5px;margin-bottom:.4rem;
+}
+.verdict.safe .verdict-title{color:#34d399}
+.verdict.warn .verdict-title{color:#fcd34d}
+.verdict.danger .verdict-title{color:#fda4af}
+.verdict-desc{font-size:.875rem;color:var(--t2);line-height:1.7;max-width:520px}
+
+.verdict-meter{text-align:center;flex-shrink:0}
+.meter-ring{width:88px;height:88px;position:relative}
+.meter-ring svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:7}
+.ring-fg{
+  fill:none;stroke-width:7;stroke-linecap:round;
+  stroke-dasharray:238;stroke-dashoffset:238;
+  transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);
+}
+.meter-txt{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.meter-pct{
+  font-size:1.1rem;font-weight:800;
+  font-family:'Fira Code',monospace;line-height:1;
+}
+.meter-label{font-size:.58rem;color:var(--t3);margin-top:2px;font-weight:600}
+
+/* MAIN GRID */
+.r-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1.25rem;
+  margin-bottom:1.25rem;
+}
+@media(max-width:860px){.r-grid{grid-template-columns:1fr}}
+.r-grid .span2{grid-column:span 2}
+@media(max-width:860px){.r-grid .span2{grid-column:span 1}}
+
+.card{
+  background:var(--ink2);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  animation:fade-up .4s var(--ease) both;
+}
+.card:nth-child(1){animation-delay:.04s}
+.card:nth-child(2){animation-delay:.08s}
+.card:nth-child(3){animation-delay:.12s}
+.card:nth-child(4){animation-delay:.16s}
+
+.card-head{
+  padding:.875rem 1.25rem;
+  border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  display:flex;align-items:center;gap:.625rem;
+}
+.card-head-ico{
+  width:28px;height:28px;
+  border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;
+  background:rgba(255,255,255,.06);
+  flex-shrink:0;
+}
+.card-head-title{font-size:.85rem;font-weight:700;color:var(--t1)}
+.card-head-meta{margin-inline-start:auto;font-size:.72rem;color:var(--t3)}
+.card-body{padding:1.25rem}
+
+/* CHECKS */
+.checks{display:flex;flex-direction:column;gap:.5rem}
+.chk{
+  display:flex;align-items:center;gap:.875rem;
+  padding:.7rem .875rem;
+  border-radius:var(--r-sm);
+  border:1px solid;
+  transition:border-color .15s,background .15s;
+}
+.chk.pass{background:rgba(16,185,129,.04);border-color:rgba(16,185,129,.14)}
+.chk.fail{background:rgba(244,63,94,.05);border-color:rgba(244,63,94,.18)}
+.chk.warn{background:rgba(245,158,11,.04);border-color:rgba(245,158,11,.14)}
+.chk.info{background:rgba(56,189,248,.04);border-color:rgba(56,189,248,.14)}
+.chk:hover{border-color:var(--line2)}
+
+.chk-dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+}
+.pass .chk-dot{background:var(--mint)}
+.fail .chk-dot{background:var(--rose)}
+.warn .chk-dot{background:var(--amber)}
+.info .chk-dot{background:var(--sky)}
+
+.chk-txt{flex:1;min-width:0}
+.chk-name{font-size:.82rem;font-weight:600;color:var(--t1)}
+.chk-detail{font-size:.75rem;color:var(--t3);margin-top:.1rem;line-height:1.45}
+
+.chk-pill{
+  font-size:.67rem;font-weight:800;
+  padding:.15rem .5rem;border-radius:var(--r-pill);
+  text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;
+}
+.pass .chk-pill{background:rgba(16,185,129,.15);color:#34d399}
+.fail .chk-pill{background:rgba(244,63,94,.15);color:#fda4af}
+.warn .chk-pill{background:rgba(245,158,11,.15);color:#fcd34d}
+.info .chk-pill{background:rgba(56,189,248,.15);color:#7dd3fc}
+
+/* URL ANATOMY */
+.url-code{
+  background:var(--ink3);
+  border-radius:var(--r-sm);
+  padding:.875rem 1rem;
+  direction:ltr;text-align:left;
+  display:flex;flex-wrap:wrap;gap:.25rem .1rem;
+  align-items:center;
+  font-family:'Fira Code',monospace;
+  font-size:.78rem;
+  margin-bottom:1rem;
+  border:1px solid rgba(255,255,255,.06);
+}
+.up{border-radius:4px;padding:.15rem .45rem}
+.up-proto{background:rgba(56,189,248,.12);color:#7dd3fc}
+.up-sub{background:rgba(167,139,250,.12);color:#c4b5fd}
+.up-domain{background:rgba(37,99,235,.15);color:#93c5fd}
+.up-path{background:rgba(16,185,129,.1);color:#6ee7b7}
+.up-query{background:rgba(245,158,11,.1);color:#fcd34d}
+.up-sep{color:rgba(255,255,255,.2);padding:0 .1rem}
+
+.url-table{width:100%;border-collapse:collapse}
+.url-table tr{border-bottom:1px solid var(--line)}
+.url-table tr:last-child{border-bottom:none}
+.url-table td{padding:.5rem .25rem;font-size:.79rem}
+.url-table td:first-child{color:var(--t3);font-weight:500;width:42%}
+.url-table td:last-child{
+  color:var(--t1);font-weight:600;
+  font-family:'Fira Code',monospace;
+  direction:ltr;text-align:left;font-size:.74rem;
+}
+
+/* THREATS */
+.threats{display:flex;flex-direction:column;gap:.5rem}
+.threat{
+  display:flex;gap:.75rem;
+  padding:.75rem .875rem;
+  background:rgba(244,63,94,.05);
+  border:1px solid rgba(244,63,94,.16);
+  border-radius:var(--r-sm);
+  font-size:.8rem;color:#fca5a5;
+  line-height:1.55;
+  animation:fade-up .3s var(--ease) both;
+}
+.threat-ico{flex-shrink:0;margin-top:1px}
+
+.no-threats{
+  text-align:center;padding:2rem 1rem;
+}
+.no-threats-ring{
+  width:60px;height:60px;
+  background:rgba(16,185,129,.08);
+  border:1px solid rgba(16,185,129,.2);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+  margin:0 auto .875rem;
+}
+.no-threats-t{font-size:.875rem;font-weight:700;color:var(--mint)}
+.no-threats-s{font-size:.75rem;color:var(--t3);margin-top:.3rem}
+
+/* ACTION ROW */
+.action-row{
+  display:flex;gap:.75rem;flex-wrap:wrap;
+  margin-top:1.25rem;
+  animation:fade-up .4s var(--ease) .3s both;
+}
+.act-btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.625rem 1.25rem;
+  border-radius:var(--r-sm);
+  font-size:.875rem;font-weight:700;
+  transition:all .15s var(--ease);
+  border:none;
+  font-family:'Cairo',sans-serif;
+}
+.act-btn.primary{
+  background:var(--azure);color:#fff;
+  box-shadow:0 2px 12px var(--azure-glow);
+}
+.act-btn.primary:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 6px 20px var(--azure-glow)}
+.act-btn.ghost{
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--line2);
+  color:var(--t2);
+}
+.act-btn.ghost:hover{background:rgba(255,255,255,.08);color:var(--t1);border-color:var(--line2)}
+.act-btn.external{
+  background:rgba(56,189,248,.06);
+  border:1px solid rgba(56,189,248,.18);
+  color:var(--sky);
+}
+.act-btn.external:hover{background:rgba(56,189,248,.1)}
+
+/* ────────────────────────────────────────────
+   FEATURES SECTION
+──────────────────────────────────────────── */
+.section{padding:6rem 2rem}
+.section-inner{max-width:1280px;margin:0 auto}
+.section.alt{background:var(--mist)}
+
+.s-eyebrow{
+  font-size:.72rem;font-weight:800;
+  color:var(--azure);text-transform:uppercase;
+  letter-spacing:2px;margin-bottom:.875rem;
+}
+.s-title{
+  font-size:clamp(1.6rem,3vw,2.4rem);
+  font-weight:900;color:var(--white);
+  letter-spacing:-1px;line-height:1.2;
+  margin-bottom:1rem;
+}
+.s-desc{
+  font-size:.975rem;color:var(--t2);
+  max-width:520px;line-height:1.75;
+  margin-bottom:3.5rem;
+}
+
+.feat-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1.25rem;
+}
+@media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.feat-grid{grid-template-columns:1fr}}
+
+.feat-card{
+  padding:1.75rem;
+  background:var(--ink2);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  transition:all .25s var(--ease);
+  position:relative;overflow:hidden;
+}
+.feat-card::before{
+  content:'';position:absolute;
+  top:0;right:0;width:100%;height:2px;
+  opacity:0;transition:opacity .25s;
+}
+.feat-card:hover{
+  border-color:var(--line2);
+  transform:translateY(-3px);
+  box-shadow:0 16px 40px rgba(0,0,0,.3);
+}
+.feat-card:hover::before{opacity:1}
+
+.feat-c1::before{background:linear-gradient(90deg,var(--azure),var(--sky))}
+.feat-c2::before{background:linear-gradient(90deg,var(--mint),#34d399)}
+.feat-c3::before{background:linear-gradient(90deg,#a78bfa,var(--sky))}
+.feat-c4::before{background:linear-gradient(90deg,var(--amber),#fb923c)}
+.feat-c5::before{background:linear-gradient(90deg,var(--rose),#fb7185)}
+.feat-c6::before{background:linear-gradient(90deg,var(--sky),#818cf8)}
+
+.feat-ico{
+  width:48px;height:48px;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.25rem;margin-bottom:1.25rem;
+  flex-shrink:0;
+}
+.feat-card:nth-child(1) .feat-ico{background:rgba(37,99,235,.12)}
+.feat-card:nth-child(2) .feat-ico{background:rgba(16,185,129,.12)}
+.feat-card:nth-child(3) .feat-ico{background:rgba(167,139,250,.12)}
+.feat-card:nth-child(4) .feat-ico{background:rgba(245,158,11,.12)}
+.feat-card:nth-child(5) .feat-ico{background:rgba(244,63,94,.12)}
+.feat-card:nth-child(6) .feat-ico{background:rgba(56,189,248,.12)}
+
+.feat-title{font-size:.975rem;font-weight:700;color:var(--t1);margin-bottom:.5rem}
+.feat-desc{font-size:.82rem;color:var(--t2);line-height:1.65}
+
+/* ────────────────────────────────────────────
+   HOW IT WORKS
+──────────────────────────────────────────── */
+.steps-row{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1.5rem;
+  position:relative;
+}
+.steps-row::before{
+  content:'';position:absolute;
+  top:26px;right:calc(12.5% + 12px);left:calc(12.5% + 12px);
+  height:1px;
+  background:linear-gradient(90deg,var(--azure),var(--sky));
+  opacity:.15;
+}
+@media(max-width:760px){
+  .steps-row{grid-template-columns:repeat(2,1fr)}
+  .steps-row::before{display:none}
+}
+
+.step-card{text-align:center}
+.step-n{
+  width:52px;height:52px;
+  border:1.5px solid rgba(37,99,235,.4);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;font-weight:900;
+  font-family:'Fira Code',monospace;
+  color:var(--azure);
+  margin:0 auto 1.25rem;
+  background:rgba(37,99,235,.06);
+  box-shadow:0 0 0 6px rgba(37,99,235,.04);
+  position:relative;z-index:1;
+}
+.step-t{font-size:.9rem;font-weight:700;color:var(--t1);margin-bottom:.4rem}
+.step-d{font-size:.78rem;color:var(--t2);line-height:1.6}
+
+/* ────────────────────────────────────────────
+   STATS BAND
+──────────────────────────────────────────── */
+.stats-band{
+  background:var(--ink2);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:3rem 2rem;
+}
+.stats-inner{
+  max-width:1280px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--line);
+}
+@media(max-width:700px){
+  .stats-inner{grid-template-columns:repeat(2,1fr)}
+}
+.stat-cell{
+  background:var(--ink2);
+  padding:2rem 1.5rem;text-align:center;
+}
+.stat-n{
+  font-size:2.25rem;font-weight:900;
+  font-family:'Fira Code',monospace;
+  color:var(--white);line-height:1;
+  margin-bottom:.5rem;
+}
+.stat-n.c-azure{color:var(--sky)}
+.stat-n.c-mint{color:var(--mint)}
+.stat-n.c-rose{color:#fda4af}
+.stat-n.c-amber{color:#fcd34d}
+.stat-l{font-size:.78rem;font-weight:600;color:var(--t3)}
+
+/* ────────────────────────────────────────────
+   RECENT SCANS HISTORY
+──────────────────────────────────────────── */
+.history-section{
+  display:none;
+  padding:4rem 2rem;
+  border-top:1px solid var(--line);
+}
+.history-section.on{display:block}
+.history-inner{max-width:1280px;margin:0 auto}
+.history-grid{
+  display:flex;flex-direction:column;gap:.5rem;
+  margin-top:1.5rem;
+}
+.h-item{
+  display:flex;align-items:center;gap:1rem;
+  padding:.75rem 1rem;
+  background:var(--ink2);
+  border:1px solid var(--line);
+  border-radius:var(--r-sm);
+  cursor:pointer;
+  transition:all .15s;
+}
+.h-item:hover{border-color:var(--line2);background:var(--ink3)}
+.h-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.h-url{
+  flex:1;font-size:.8rem;
+  font-family:'Fira Code',monospace;
+  color:var(--t2);direction:ltr;text-align:left;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.h-score{
+  font-size:.72rem;font-weight:800;padding:.15rem .55rem;
+  border-radius:var(--r-pill);font-family:'Fira Code',monospace;
+}
+.h-time{font-size:.72rem;color:var(--t3);white-space:nowrap}
+
+/* ────────────────────────────────────────────
+   CTA
+──────────────────────────────────────────── */
+.cta-section{
+  padding:6rem 2rem;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.cta-glow{
+  position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  width:700px;height:400px;
+  background:radial-gradient(ellipse,rgba(37,99,235,.1) 0%,transparent 70%);
+  pointer-events:none;
+}
+.cta-inner{position:relative;z-index:1;max-width:580px;margin:0 auto}
+.cta-t{
+  font-size:clamp(1.6rem,3vw,2.25rem);
+  font-weight:900;color:var(--white);
+  letter-spacing:-1px;margin-bottom:1rem;
+}
+.cta-s{font-size:.975rem;color:var(--t2);margin-bottom:2rem;line-height:1.7}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:.625rem;
+  background:var(--white);color:var(--ink);
+  padding:.875rem 2.25rem;border-radius:var(--r-md);
+  font-family:'Cairo',sans-serif;
+  font-size:1rem;font-weight:800;
+  border:none;cursor:pointer;
+  transition:all .2s var(--ease);
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+
+/* ────────────────────────────────────────────
+   FOOTER
+──────────────────────────────────────────── */
+footer{
+  background:var(--ink2);
+  border-top:1px solid var(--line);
+  padding:4rem 2rem 2.5rem;
+}
+.footer-inner{max-width:1280px;margin:0 auto}
+.footer-top{
+  display:grid;
+  grid-template-columns:2.5fr 1fr 1fr 1fr;
+  gap:3rem;
+  margin-bottom:3rem;
+  padding-bottom:2.5rem;
+  border-bottom:1px solid var(--line);
+}
+@media(max-width:860px){.footer-top{grid-template-columns:1fr 1fr;gap:2rem}}
+@media(max-width:480px){.footer-top{grid-template-columns:1fr}}
+
+.footer-brand-desc{
+  font-size:.82rem;color:var(--t3);
+  line-height:1.75;margin-top:1rem;max-width:300px;
+}
+.footer-badges{display:flex;gap:.625rem;margin-top:1.25rem;flex-wrap:wrap}
+.f-badge{
+  font-size:.7rem;font-weight:600;
+  padding:.25rem .7rem;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--line);
+  color:var(--t3);
+}
+.footer-col-h{
+  font-size:.72rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--t3);margin-bottom:1rem;
+}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:.6rem}
+.footer-links a{
+  font-size:.83rem;color:var(--t3);
+  transition:color .15s;
+}
+.footer-links a:hover{color:var(--t1)}
+
+.footer-bottom{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:1rem;
+  font-size:.77rem;color:var(--t3);
+}
+.footer-bottom-links{display:flex;gap:1.5rem;flex-wrap:wrap}
+.footer-bottom-links a{color:var(--t3);transition:color .15s}
+.footer-bottom-links a:hover{color:var(--t1)}
+
+/* ────────────────────────────────────────────
+   MOBILE NAV MENU (simple)
+──────────────────────────────────────────── */
+.nav-mob-btn{
+  display:none;
+  background:none;border:none;
+  color:var(--t2);font-size:1.25rem;
+  padding:.25rem;
+}
+@media(max-width:800px){
+  .nav-links{display:none}
+  .nav-mob-btn{display:block}
+  .nav-right .nav-badge{display:none}
+}
+@media(max-width:500px){
+  .hero{padding:110px 1.25rem 60px}
+  .scan-row{flex-direction:column}
+  .scan-btn{height:44px;width:100%;justify-content:center}
+  .verdict{flex-direction:column;text-align:center;padding:1.5rem}
+  .verdict-meter{margin:0 auto}
+}
+</style>
+</head>
+<body>
+
+<!-- Animated canvas background -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="page">
+
+<!-- ══════════════════════════════════════════
+     NAV
+══════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo" onclick="goHome();return false">
+      <div class="logo-mark">🛡️</div>
+      <span class="logo-name">را<em>دار</em></span>
+      <span class="logo-dot"></span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#" class="on" onclick="goHome();return false">الرئيسية</a></li>
+      <li><a href="#features">المميزات</a></li>
+      <li><a href="#how">كيف يعمل</a></li>
+      <li><a href="#history-section">السجل</a></li>
+      <li><a href="#contact">تواصل</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <span class="nav-badge">النظام يعمل</span>
+      <button class="btn-scan-nav" onclick="focusScan()">🔍 فحص سريع</button>
+    </div>
+    <button class="nav-mob-btn" onclick="focusScan()">🔍</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-noise"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+
+    <div class="hero-eyebrow">
+      <span class="eyebrow-icon">🛡️</span>
+      المنصة الأمنية العربية الأولى لفحص الروابط
+    </div>
+
+    <h1 class="hero-h1">
+      اكشف التهديدات<br>
+      <span class="grad">قبل فوات الأوان</span>
+    </h1>
+
+    <p class="hero-sub">
+      رادار يحلّل أي رابط من أكثر من ١٥ زاوية أمنية في ثوانٍ — اكتشاف التصيد، البرمجيات الخبيثة، شهادات SSL، وسمعة النطاق.
+    </p>
+
+    <!-- SCAN BOX -->
+    <div class="scan-box">
+      <div class="scan-label">أدخل الرابط للفحص الفوري</div>
+      <div class="scan-row">
+        <input
+          type="text"
+          id="urlInput"
+          class="scan-input"
+          placeholder="https://example.com/suspicious-link"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button class="scan-btn" id="scanBtn" onclick="startScan()">
+          <span id="btnIco">🔍</span>
+          <span id="btnTxt">فحص الآن</span>
+        </button>
+      </div>
+      <div class="scan-hints">
+        <span>يدعم HTTP · HTTPS · FTP</span>
+        <div class="scan-hints-right">
+          <span>🔒 خصوصية تامة</span>
+          <span>⚡ نتائج فورية</span>
+          <span>🆓 مجاني دائماً</span>
+        </div>
+      </div>
+      <div class="scan-error" id="scanError">
+        <span>⚠️</span><span id="errTxt">الرجاء إدخال رابط صحيح</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     TRUST
+══════════════════════════════════════════ -->
+<div class="trust-strip">
+  <div class="trust-strip-inner">
+    <div class="trust-item">
+      <div class="trust-item-icon" style="background:rgba(37,99,235,.1)">🔒</div> تشفير SSL
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-icon" style="background:rgba(16,185,129,.1)">🌐</div> تحليل DNS
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-icon" style="background:rgba(245,158,11,.1)">🎭</div> كشف التصيد
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-icon" style="background:rgba(167,139,250,.1)">🔡</div> Homograph Attack
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-icon" style="background:rgba(244,63,94,.1)">🔀</div> إعادة توجيه مشبوهة
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-icon" style="background:rgba(56,189,248,.1)">📊</div> تقرير شامل
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LOADING
+══════════════════════════════════════════ -->
+<div class="loading-zone" id="loadingZone">
+  <div class="loading-card">
+    <div class="lc-top">
+      <div class="lc-spin"></div>
+      <div>
+        <div class="lc-title">جارٍ تحليل الرابط أمنياً…</div>
+        <div class="lc-url" id="lcUrl">—</div>
+      </div>
+    </div>
+    <div class="lc-steps">
+      <div class="lc-step" id="ls1"><div class="lc-n">1</div> فحص بروتوكول الاتصال وشهادة SSL</div>
+      <div class="lc-step" id="ls2"><div class="lc-n">2</div> تحليل بنية الرابط والنطاق</div>
+      <div class="lc-step" id="ls3"><div class="lc-n">3</div> مطابقة قواعد بيانات التهديدات</div>
+      <div class="lc-step" id="ls4"><div class="lc-n">4</div> فحص سمعة النطاق والامتداد</div>
+      <div class="lc-step" id="ls5"><div class="lc-n">5</div> إنتاج التقرير الأمني</div>
+    </div>
+    <div class="lc-bar"><div class="lc-fill" id="lcFill"></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     RESULTS
+══════════════════════════════════════════ -->
+<div class="results" id="results">
+  <div class="results-inner">
+
+    <div class="verdict" id="verdictEl">
+      <div class="verdict-emblem" id="verdictEmb">🛡️</div>
+      <div class="verdict-body">
+        <div class="verdict-tag" id="verdictTag">آمن</div>
+        <div class="verdict-title" id="verdictTitle">جارٍ التحليل…</div>
+        <p class="verdict-desc" id="verdictDesc"></p>
+      </div>
+      <div class="verdict-meter">
+        <div class="meter-ring">
+          <svg width="88" height="88" viewBox="0 0 88 88">
+            <circle class="ring-bg" cx="44" cy="44" r="38"/>
+            <circle class="ring-fg" id="ringFg" cx="44" cy="44" r="38"/>
+          </svg>
+          <div class="meter-txt">
+            <span class="meter-pct" id="meterPct">0%</span>
+            <span class="meter-label">خطورة</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-grid">
+      <!-- Checks – full width -->
+      <div class="card span2">
+        <div class="card-head">
+          <div class="card-head-ico">🔐</div>
+          <span class="card-head-title">نتائج الفحص الأمني التفصيلية</span>
+          <span class="card-head-meta" id="chkSummary"></span>
+        </div>
+        <div class="card-body">
+          <div class="checks" id="checkList"></div>
+        </div>
+      </div>
+
+      <!-- URL anatomy -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-ico">🔗</div>
+          <span class="card-head-title">تشريح الرابط</span>
+        </div>
+        <div class="card-body">
+          <div class="url-code" id="urlCode"></div>
+          <table class="url-table" id="urlTable"></table>
+        </div>
+      </div>
+
+      <!-- Threats -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-ico">🚨</div>
+          <span class="card-head-title">التهديدات المكتشفة</span>
+          <span class="card-head-meta" id="threatCount"></span>
+        </div>
+        <div class="card-body" id="threatBox"></div>
+      </div>
+    </div>
+
+    <div class="action-row" id="actionRow">
+      <button class="act-btn primary" onclick="copyReport()">📋 نسخ التقرير</button>
+      <button class="act-btn ghost" onclick="resetScan()">🔄 فحص رابط آخر</button>
+      <a class="act-btn external" id="vtBtn" href="#" target="_blank" rel="noopener">🔗 VirusTotal</a>
+      <a class="act-btn external" id="gbBtn" href="#" target="_blank" rel="noopener">🔍 Google Safe Browsing</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LIVE SESSION STATS
+══════════════════════════════════════════ -->
+<div class="stats-band">
+  <div class="stats-inner">
+    <div class="stat-cell">
+      <div class="stat-n c-azure" id="st-total">0</div>
+      <div class="stat-l">روابط تم فحصها في جلستك</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-n c-rose" id="st-thr">0</div>
+      <div class="stat-l">تهديد مكتشف</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-n c-mint" id="st-safe">0</div>
+      <div class="stat-l">رابط آمن</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-n c-amber">15+</div>
+      <div class="stat-l">معيار فحص أمني</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════ -->
+<section class="section" id="features">
+  <div class="section-inner">
+    <div class="s-eyebrow">قدراتنا التقنية</div>
+    <h2 class="s-title">تحليل أمني شامل<br>بأكثر من ١٥ معياراً</h2>
+    <p class="s-desc">رادار يجمع أفضل تقنيات الأمن الإلكتروني في واجهة واحدة سهلة الاستخدام للمستخدم العربي.</p>
+    <div class="feat-grid">
+      <div class="feat-card feat-c1">
+        <div class="feat-ico">🔒</div>
+        <div class="feat-title">فحص SSL / TLS</div>
+        <div class="feat-desc">التحقق الفوري من شهادة الأمان ومستوى التشفير وصلاحية الاتصال المشفّر.</div>
+      </div>
+      <div class="feat-card feat-c2">
+        <div class="feat-ico">🎭</div>
+        <div class="feat-title">كشف التصيد الاحتيالي</div>
+        <div class="feat-desc">تحليل بنية الرابط والكلمات المفتاحية الشائعة في حملات التصيد والاحتيال الإلكتروني.</div>
+      </div>
+      <div class="feat-card feat-c3">
+        <div class="feat-ico">🔡</div>
+        <div class="feat-title">Homograph Attack</div>
+        <div class="feat-desc">الكشف عن هجمات استبدال الأحرف بمتشابهات من Unicode للتنكر كمواقع شرعية.</div>
+      </div>
+      <div class="feat-card feat-c4">
+        <div class="feat-ico">🌐</div>
+        <div class="feat-title">تحليل سمعة النطاق</div>
+        <div class="feat-desc">فحص الامتداد وتاريخ التسجيل والكشف عن الامتدادات المرتبطة بالاحتيال.</div>
+      </div>
+      <div class="feat-card feat-c5">
+        <div class="feat-ico">🔀</div>
+        <div class="feat-title">كشف إعادة التوجيه</div>
+        <div class="feat-desc">تحليل معاملات URL للكشف عن عمليات إعادة التوجيه الخفية إلى وجهات ضارة.</div>
+      </div>
+      <div class="feat-card feat-c6">
+        <div class="feat-ico">📊</div>
+        <div class="feat-title">تقرير أمني مفصّل</div>
+        <div class="feat-desc">تقرير قابل للنسخ مع درجة الخطورة وتفاصيل كل فحص وروابط للتحقق الخارجي.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     HOW IT WORKS
+══════════════════════════════════════════ -->
+<section class="section alt" id="how">
+  <div class="section-inner">
+    <div class="s-eyebrow">الآلية</div>
+    <h2 class="s-title">كيف يعمل رادار؟</h2>
+    <p class="s-desc">أربع خطوات بسيطة للحصول على تقرير أمني شامل.</p>
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-n">01</div>
+        <div class="step-t">أدخل الرابط</div>
+        <div class="step-d">الصق الرابط المشبوه في خانة الفحص</div>
+      </div>
+      <div class="step-card">
+        <div class="step-n">02</div>
+        <div class="step-t">تحليل متعدد الطبقات</div>
+        <div class="step-d">تحليل من أكثر من ١٥ زاوية أمنية</div>
+      </div>
+      <div class="step-card">
+        <div class="step-n">03</div>
+        <div class="step-t">حساب درجة الخطر</div>
+        <div class="step-d">درجة موزونة بناءً على جميع المعايير</div>
+      </div>
+      <div class="step-card">
+        <div class="step-n">04</div>
+        <div class="step-t">تقرير واضح</div>
+        <div class="step-d">تقرير مفصّل مع توصيات فورية</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SCAN HISTORY
+══════════════════════════════════════════ -->
+<div class="history-section" id="history-section">
+  <div class="history-inner">
+    <div class="s-eyebrow">الجلسة الحالية</div>
+    <h2 class="s-title" style="font-size:1.5rem">سجل الفحص</h2>
+    <div class="history-grid" id="histGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     CTA
+══════════════════════════════════════════ -->
+<section class="cta-section" id="contact">
+  <div class="cta-glow"></div>
+  <div class="cta-inner">
+    <h2 class="cta-t">ابدأ الفحص الآن — مجاناً</h2>
+    <p class="cta-s">لا تسجيل، لا اشتراك. رادار مجاني للجميع لحماية المجتمع العربي من التهديدات الإلكترونية.</p>
+    <button class="cta-btn" onclick="focusScan()">🔍 افحص رابطاً الآن</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer id="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div style="display:flex;align-items:center;gap:.625rem">
+          <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--azure),var(--sky));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.875rem">🛡️</div>
+          <span style="font-size:1.1rem;font-weight:800;color:var(--white)">رادار</span>
+        </div>
+        <p class="footer-brand-desc">منصة أمنية عربية متخصصة في الكشف عن الروابط المشبوهة وحماية المستخدمين من التهديدات الإلكترونية باستخدام تقنيات تحليل متقدمة.</p>
+        <div class="footer-badges">
+          <span class="f-badge">🔒 HTTPS فقط</span>
+          <span class="f-badge">🆓 مجاني دائماً</span>
+          <span class="f-badge">🌐 عربي 100%</span>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-h">المنصة</div>
+        <ul class="footer-links">
+          <li><a href="#">الرئيسية</a></li>
+          <li><a href="#features">المميزات</a></li>
+          <li><a href="#how">كيف يعمل</a></li>
+          <li><a href="#history-section">سجل الفحص</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-h">الموارد</div>
+        <ul class="footer-links">
+          <li><a href="#">دليل الأمان</a></li>
+          <li><a href="#">كيف تحمي نفسك</a></li>
+          <li><a href="#">أنواع التهديدات</a></li>
+          <li><a href="#">توثيق API</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-h">الشركة</div>
+        <ul class="footer-links">
+          <li><a href="#">عن رادار</a></li>
+          <li><a href="#">تواصل معنا</a></li>
+          <li><a href="#">الإبلاغ عن رابط</a></li>
+          <li><a href="#">الشراكات</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 رادار — جميع الحقوق محفوظة</span>
+      <div class="footer-bottom-links">
+        <a href="#">سياسة الخصوصية</a>
+        <a href="#">شروط الاستخدام</a>
+        <a href="#">إخلاء المسؤولية</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</div><!-- .page -->
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+/* ─── CANVAS BACKGROUND ─── */
+(function(){
+  const c=document.getElementById('bg-canvas');
+  const ctx=c.getContext('2d');
+  let W,H,particles=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  class P{
+    constructor(){this.reset()}
+    reset(){
+      this.x=Math.random()*W;this.y=Math.random()*H;
+      this.r=Math.random()*.8+.2;
+      this.vx=(Math.random()-.5)*.15;this.vy=(Math.random()-.5)*.15;
+      this.a=Math.random()*.4+.05;
+    }
+    draw(){
+      ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(56,189,248,${this.a})`;ctx.fill();
+    }
+    update(){
+      this.x+=this.vx;this.y+=this.vy;
+      if(this.x<0||this.x>W||this.y<0||this.y>H)this.reset();
+    }
+  }
+  for(let i=0;i<90;i++)particles.push(new P());
+
+  // Grid lines
+  function drawGrid(){
+    ctx.strokeStyle='rgba(37,99,235,0.04)';ctx.lineWidth=1;
+    const sz=70;
+    for(let x=0;x<W;x+=sz){
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    }
+    for(let y=0;y<H;y+=sz){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+  }
+
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    drawGrid();
+    particles.forEach(p=>{p.update();p.draw()});
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ─── STATE ─── */
+let stats={t:0,thr:0,safe:0};
+let history=[];
+let cur=null;
+
+function updateStats(){
+  document.getElementById('st-total').textContent=stats.t;
+  document.getElementById('st-thr').textContent=stats.thr;
+  document.getElementById('st-safe').textContent=stats.safe;
+}
+
+/* ─── URL UTILS ─── */
+function norm(u){u=u.trim();if(!/^https?:\/\//i.test(u))u='https://'+u;return u}
+function valid(u){try{const p=new URL(u);return['http:','https:'].includes(p.protocol)}catch{return false}}
+function parse(u){
+  const p=new URL(u);
+  const hp=p.hostname.split('.');
+  return{
+    full:u,protocol:p.protocol,hostname:p.hostname,
+    tld:hp.slice(-2).join('.'),subdomain:hp.slice(0,-2).join('.'),
+    port:p.port,pathname:p.pathname,search:p.search,
+    isHTTPS:p.protocol==='https:',
+    isIP:/^\d{1,3}(\.\d{1,3}){3}$/.test(p.hostname),
+    params:[...p.searchParams.entries()],
+  };
+}
+
+/* ─── ANALYSIS ENGINE ─── */
+function analyse(url,pr){
+  const checks=[],threats=[];
+  let score=0;
+  const add=(name,ico,st,pill,detail)=>checks.push({name,ico,st,pill,detail});
+
+  /* 1 HTTPS */
+  if(pr.isHTTPS)add('شهادة SSL / HTTPS','🔒','pass','مشفّر','الاتصال محمي بـ HTTPS — بياناتك مشفّرة أثناء النقل');
+  else{add('شهادة SSL / HTTPS','🔓','fail','غير مشفّر','الرابط يستخدم HTTP — بياناتك مكشوفة للاختراق');score+=25;threats.push('الاتصال غير مشفّر (HTTP) — أي بيانات تُرسل يمكن اعتراضها')}
+
+  /* 2 IP Direct */
+  if(pr.isIP){add('هوية الخادم','🖥️','fail','IP مباشر',`عنوان IP مباشر (${pr.hostname}) بدل نطاق — أسلوب شائع في التصيد`);score+=30;threats.push('الرابط يستخدم IP مباشر — المواقع الشرعية تستخدم أسماء نطاقات')}
+  else add('هوية الخادم','🌐','pass','نطاق سليم',`النطاق: ${pr.hostname}`);
+
+  /* 3 Length */
+  const len=url.length;
+  if(len>200){add('طول الرابط','📏','fail','طويل جداً',`${len} حرف — الإفراط في الطول يُخفي وجهة الرابط الحقيقية`);score+=15;threats.push(`طول الرابط مفرط (${len} حرف) — مؤشر على إخفاء المحتوى`)}
+  else if(len>120)add('طول الرابط','📏','warn','طويل نسبياً',`${len} حرف — أطول من المعتاد`);
+  else add('طول الرابط','📏','pass','طبيعي',`${len} حرف — ضمن النطاق المقبول`);
+
+  /* 4 TLD */
+  const badT=['.tk','.ml','.ga','.cf','.gq','.xyz','.pw','.cc','.top','.click','.bid','.win','.loan','.stream','.download','.party','.review','.trade','.faith','.science','.gdn','.racing','.date','.vip','.icu'];
+  const hn=pr.hostname.toLowerCase();
+  const bt=badT.find(t=>hn.endsWith(t));
+  if(bt){add('امتداد النطاق','🏷️','fail','امتداد مشبوه',`"${bt}" امتداد شائع في مواقع الاحتيال المجانية`);score+=20;threats.push(`الامتداد "${bt}" مرتبط بآلاف مواقع الاحتيال`)}
+  else add('امتداد النطاق','🏷️','pass','موثوق',`الامتداد ".${pr.tld.split('.').pop()}" لا يُعدّ مشبوهاً`);
+
+  /* 5 Phishing words */
+  const pw=['login','signin','account','verify','update','secure','banking','paypal','amazon','apple','microsoft','google','facebook','wallet','crypto','password','confirm','suspended','urgent','reward','prize','winner','claim','alert','security','validation','authenticate','token','otp'];
+  const ul=url.toLowerCase();
+  const fw=pw.filter(w=>ul.includes(w));
+  if(fw.length>=3){add('كلمات التصيد','🎭','fail','تصيد محتمل',`كلمات مشبوهة: ${fw.slice(0,5).join('، ')}`);score+=22;threats.push(`الرابط يتضمن ${fw.length} كلمة شائعة في التصيد الاحتيالي`)}
+  else if(fw.length>0)add('كلمات التصيد','🎭','warn','انتبه',`كلمات مثيرة للقلق: ${fw.join('، ')}`);
+  else add('كلمات التصيد','🎭','pass','نظيف','لا توجد كلمات مرتبطة بالتصيد');
+
+  /* 6 Subdomains */
+  const sp=pr.subdomain?pr.subdomain.split('.').filter(Boolean):[];
+  if(sp.length>=3){add('النطاقات الفرعية','🌿','fail','مشبوه',`${sp.length} مستويات فرعية — يُستخدم للتنكر كمواقع شرعية`);score+=18;threats.push(`${sp.length} مستويات نطاق فرعية — أسلوب تصيد متقدم`)}
+  else if(sp.length===2)add('النطاقات الفرعية','🌿','warn','انتبه','نطاق فرعي — تأكد من أنك في الموقع الأصلي');
+  else add('النطاقات الفرعية','🌿','pass','سليم','بنية نطاق بسيطة وطبيعية');
+
+  /* 7 Redirect */
+  const rk=['url','redirect','next','goto','return','target','dest','link','out','forward','rurl','continue','ref'];
+  const rp=pr.params.find(([k])=>rk.includes(k.toLowerCase()));
+  if(rp){add('إعادة التوجيه','🔀','warn','توجيه مشبوه',`المعامل "${rp[0]}" قد يحولك لموقع مختلف`);score+=12;threats.push('الرابط يحتوي معامل إعادة توجيه — الوجهة الفعلية قد تكون خبيثة')}
+  else add('إعادة التوجيه','🔀','pass','مباشر','لا توجد معاملات إعادة توجيه');
+
+  /* 8 Homograph */
+  if(/[^\x00-\x7F]/.test(pr.hostname)){add('Homograph Attack','🔡','fail','خطير','أحرف Unicode في النطاق — تقنية Punycode للتنكر');score+=28;threats.push('اسم النطاق يحتوي أحرفاً Unicode خادعة (Homograph/Punycode Attack)')}
+  else add('Homograph Attack','🔡','pass','سليم','لا توجد أحرف Unicode خادعة في النطاق');
+
+  /* 9 Port */
+  if(pr.port){
+    const bad=['4444','1337','31337','9999','6666','6667','4545','8888'];
+    if(bad.includes(pr.port)){add('المنفذ','🚪','fail','منفذ خبيث',`المنفذ ${pr.port} مرتبط بالأنشطة الضارة`);score+=22;threats.push(`المنفذ ${pr.port} مُستخدم في أنشطة إلكترونية خبيثة معروفة`)}
+    else add('المنفذ','🚪','warn','غير معتاد',`منفذ ${pr.port} — المواقع الشرعية تستخدم 80 أو 443`);
+  }
+
+  /* 10 Path */
+  const dp=['.exe','.bat','.sh','.ps1','eval(','base64','cmd=','exec=','system(','shell_exec','<script'];
+  const pl=pr.pathname.toLowerCase();
+  const dp2=dp.find(d=>pl.includes(d));
+  if(dp2){add('مسار الملف','📁','fail','مسار خبيث',`يحتوي عنصراً خطيراً: "${dp2}"`);score+=18;threats.push(`مسار الرابط يتضمن "${dp2}" — مؤشر قوي على محتوى ضار`)}
+  else add('مسار الملف','📁','pass','سليم','المسار لا يحتوي عناصر خطيرة');
+
+  /* 11 Trusted list */
+  const trusted=['google.com','youtube.com','facebook.com','twitter.com','x.com','instagram.com','linkedin.com','github.com','microsoft.com','apple.com','amazon.com','wikipedia.org','reddit.com','netflix.com','stackoverflow.com','mozilla.org','cloudflare.com','w3.org','bbc.com','cnn.com','reuters.com','bloomberg.com','yahoo.com','outlook.com','office.com'];
+  const ch=pr.hostname.replace(/^www\./,'');
+  const trusted2=trusted.some(d=>ch===d||ch.endsWith('.'+d));
+  if(trusted2){add('السمعة العالمية','⭐','pass','موثوق عالمياً','النطاق مدرج في قائمة المواقع الموثوقة عالمياً');score=Math.max(0,score-35)}
+  else add('السمعة العالمية','⭐','info','غير مدرج','النطاق غير موجود في قائمتنا البيضاء — لا يعني بالضرورة خطورته');
+
+  /* 12 Encoded chars */
+  const enc=(url.match(/%[0-9a-fA-F]{2}/g)||[]).length;
+  if(enc>10){add('ترميز URL','🔠','fail','مُبهم',`${enc} حرفاً مُرمَّزاً — يخفي الوجهة الحقيقية`);score+=15;threats.push(`${enc} حرفاً مُرمَّزاً — يُستخدم لإخفاء الرابط الحقيقي`)}
+  else if(enc>3)add('ترميز URL','🔠','warn','جزئي',`${enc} أحرف مُرمَّزة — مقبول لكن تحقق`);
+  else add('ترميز URL','🔠','pass','واضح','الرابط واضح بلا ترميز مشبوه');
+
+  /* 13 Many params */
+  if(pr.params.length>8)add('معاملات الاستعلام','❓','warn','كثيرة',`${pr.params.length} معامل — قد تخفي بيانات مشبوهة`);
+  else if(pr.params.length>0)add('معاملات الاستعلام','❓','info',`${pr.params.length} معامل`,`يحتوي ${pr.params.length} معامل استعلام`);
+  else add('معاملات الاستعلام','❓','pass','لا توجد','رابط بسيط بدون معاملات استعلام');
+
+  score=Math.min(100,Math.max(0,Math.round(score)));
+  return{checks,threats,score};
+}
+
+/* ─── SCAN FLOW ─── */
+function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function startScan(){
+  const raw=document.getElementById('urlInput').value;
+  if(!raw.trim()){showErr('الرجاء إدخال رابط');return}
+  const url=norm(raw);
+  document.getElementById('urlInput').value=url;
+  if(!valid(url)){showErr('رابط غير صحيح — مثال: https://example.com');return}
+  hideErr();
+
+  document.getElementById('scanBtn').disabled=true;
+  document.getElementById('btnIco').textContent='⏳';
+  document.getElementById('btnTxt').textContent='جارٍ الفحص…';
+  document.getElementById('results').classList.remove('on');
+
+  const lz=document.getElementById('loadingZone');
+  lz.classList.add('on');
+  document.getElementById('lcUrl').textContent=url;
+  lz.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  const steps=['ls1','ls2','ls3','ls4','ls5'];
+  const fill=document.getElementById('lcFill');
+
+  for(let i=0;i<steps.length;i++){
+    await delay(480+Math.random()*420);
+    if(i>0){
+      const prev=document.getElementById(steps[i-1]);
+      prev.classList.remove('on');prev.classList.add('done');
+      prev.querySelector('.lc-n').textContent='✓';
+    }
+    document.getElementById(steps[i]).classList.add('on');
+    fill.style.width=((i+1)/steps.length*88)+'%';
+  }
+  await delay(350);
+  const last=document.getElementById(steps[4]);
+  last.classList.remove('on');last.classList.add('done');
+  last.querySelector('.lc-n').textContent='✓';
+  fill.style.width='100%';
+  await delay(280);
+
+  // Reset steps
+  steps.forEach((s,i)=>{
+    const el=document.getElementById(s);
+    el.classList.remove('on','done');
+    el.querySelector('.lc-n').textContent=i+1;
+  });
+  fill.style.width='0%';
+  lz.classList.remove('on');
+
+  // Analyse
+  const pr=parse(url);
+  const {checks,threats,score}=analyse(url,pr);
+  cur={url,pr,checks,threats,score};
+
+  stats.t++;
+  if(score>=45)stats.thr++;else stats.safe++;
+  updateStats();
+
+  // History
+  history.unshift({url,score,time:Date.now()});
+  history=history.slice(0,8);
+  renderHistory();
+
+  renderResults(cur);
+
+  document.getElementById('scanBtn').disabled=false;
+  document.getElementById('btnIco').textContent='🔍';
+  document.getElementById('btnTxt').textContent='فحص الآن';
+}
+
+/* ─── RENDER ─── */
+function renderResults({url,pr,checks,threats,score}){
+  const res=document.getElementById('results');
+  res.classList.add('on');
+
+  /* Verdict */
+  const ve=document.getElementById('verdictEl');
+  const emb=document.getElementById('verdictEmb');
+  const tag=document.getElementById('verdictTag');
+  const ti=document.getElementById('verdictTitle');
+  const desc=document.getElementById('verdictDesc');
+
+  if(score<20){
+    ve.className='verdict safe';emb.textContent='✅';
+    tag.textContent='✔ آمن على الأرجح';
+    ti.textContent='الرابط يبدو آمناً';
+    desc.textContent='لم نكتشف مؤشرات خطر جدية. يمكنك فتح الرابط مع الحفاظ على الحذر العام وعدم إدخال بيانات حساسة قبل التأكد من هوية الموقع.';
+    document.getElementById('ringFg').style.stroke='var(--mint)';
+    document.getElementById('meterPct').style.color='var(--mint)';
+  }else if(score<50){
+    ve.className='verdict warn';emb.textContent='⚠️';
+    tag.textContent='⚠ مشبوه';
+    ti.textContent='الرابط مشبوه — توخَّ الحذر';
+    desc.textContent='اكتشفنا مؤشرات قلق. نوصي بعدم إدخال أي بيانات شخصية أو مالية، والتحقق من الموقع من مصادر أخرى.';
+    document.getElementById('ringFg').style.stroke='var(--amber)';
+    document.getElementById('meterPct').style.color='var(--amber)';
+  }else{
+    ve.className='verdict danger';emb.textContent='🚨';
+    tag.textContent='✕ خطير';
+    ti.textContent='رابط خطير — لا تزره!';
+    desc.textContent='اكتشفنا مؤشرات خطر متعددة وقوية. هذا الرابط قد يكون تصيداً احتيالياً أو يحتوي على برمجيات خبيثة. لا تفتحه إطلاقاً.';
+    document.getElementById('ringFg').style.stroke='var(--rose)';
+    document.getElementById('meterPct').style.color='var(--rose)';
+  }
+
+  /* Score ring */
+  const circ=2*Math.PI*38;
+  const fg=document.getElementById('ringFg');
+  fg.style.strokeDasharray=circ;fg.style.strokeDashoffset=circ;
+  setTimeout(()=>fg.style.strokeDashoffset=circ-(score/100)*circ,80);
+  document.getElementById('meterPct').textContent=score+'%';
+
+  /* Checks */
+  const pass=checks.filter(c=>c.st==='pass').length;
+  const fail=checks.filter(c=>c.st==='fail').length;
+  document.getElementById('chkSummary').textContent=`${pass} اجتاز · ${fail} فشل من ${checks.length}`;
+  document.getElementById('checkList').innerHTML=checks.map(c=>`
+    <div class="chk ${c.st}">
+      <div class="chk-dot"></div>
+      <div class="chk-txt">
+        <div class="chk-name">${c.ico} ${c.name}</div>
+        <div class="chk-detail">${c.detail}</div>
+      </div>
+      <span class="chk-pill">${c.pill}</span>
+    </div>`).join('');
+
+  /* URL anatomy */
+  let code='';
+  if(pr.protocol)code+=`<span class="up up-proto">${pr.protocol}//</span>`;
+  if(pr.subdomain)code+=`<span class="up-sep">·</span><span class="up up-sub">${pr.subdomain}</span><span class="up-sep">.</span>`;
+  code+=`<span class="up up-domain">${pr.tld}</span>`;
+  if(pr.port)code+=`<span class="up-sep">:</span><span class="up up-query">${pr.port}</span>`;
+  if(pr.pathname&&pr.pathname!=='/')code+=`<span class="up up-path">${pr.pathname}</span>`;
+  if(pr.search)code+=`<span class="up up-query">${pr.search}</span>`;
+  document.getElementById('urlCode').innerHTML=code;
+  document.getElementById('urlTable').innerHTML=[
+    ['النطاق الكامل',pr.hostname],
+    ['البروتوكول',pr.protocol.replace(':','')],
+    ['المسار',pr.pathname||'/'],
+    ['معاملات',pr.params.length?pr.params.length+' معامل':'لا يوجد'],
+    ['المنفذ',pr.port||'افتراضي'],
+    ['نوع الخادم',pr.isIP?'IP مباشر':'اسم نطاق'],
+  ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+
+  /* Threats */
+  document.getElementById('threatCount').textContent=threats.length?`${threats.length} تهديد`:'';
+  document.getElementById('threatBox').innerHTML=threats.length
+    ?`<div class="threats">${threats.map(t=>`<div class="threat"><span class="threat-ico">⛔</span><span>${t}</span></div>`).join('')}</div>`
+    :`<div class="no-threats"><div class="no-threats-ring">🎉</div><div class="no-threats-t">لا تهديدات مكتشفة</div><div class="no-threats-s">جميع المعايير الأمنية اجتازها الرابط بنجاح</div></div>`;
+
+  /* External links */
+  document.getElementById('vtBtn').href=`https://www.virustotal.com/gui/url/${btoa(url).replace(/=/g,'')}`;
+  document.getElementById('gbBtn').href=`https://transparencyreport.google.com/safe-browsing/search?url=${encodeURIComponent(url)}`;
+
+  res.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ─── HISTORY ─── */
+function renderHistory(){
+  const sec=document.getElementById('history-section');
+  if(!history.length){sec.classList.remove('on');return}
+  sec.classList.add('on');
+  const colors={safe:'var(--mint)',warn:'var(--amber)',danger:'var(--rose)'};
+  const cls=s=>s<20?'safe':s<50?'warn':'danger';
+  const labels={safe:'آمن',warn:'مشبوه',danger:'خطير'};
+  document.getElementById('histGrid').innerHTML=history.map(h=>{
+    const c=cls(h.score);const col=colors[c];
+    const ago=timeAgo(h.time);
+    return`<div class="h-item" onclick="reScan('${esc(h.url)}')">
+      <div class="h-dot" style="background:${col}"></div>
+      <div class="h-url">${esc(h.url)}</div>
+      <span class="h-score" style="background:${col}18;color:${col}">${h.score}%</span>
+      <span class="h-time">${ago}</span>
+    </div>`;
+  }).join('');
+}
+function timeAgo(ts){
+  const d=(Date.now()-ts)/1000;
+  if(d<60)return'الآن';if(d<3600)return Math.floor(d/60)+' د';
+  if(d<86400)return Math.floor(d/3600)+' س';return Math.floor(d/86400)+' ي';
+}
+
+/* ─── HELPERS ─── */
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showErr(m){const e=document.getElementById('scanError');e.classList.add('on');document.getElementById('errTxt').textContent=m}
+function hideErr(){document.getElementById('scanError').classList.remove('on')}
+function focusScan(){window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>document.getElementById('urlInput').focus(),500)}
+function goHome(){document.getElementById('results').classList.remove('on');document.getElementById('urlInput').value='';window.scrollTo({top:0,behavior:'smooth'})}
+function resetScan(){goHome()}
+function reScan(u){document.getElementById('urlInput').value=u;focusScan();setTimeout(startScan,600)}
+
+function copyReport(){
+  if(!cur)return;
+  const{url,checks,threats,score}=cur;
+  const v=score<20?'آمن':score<50?'مشبوه':'خطير';
+  let r=`تقرير فحص أمني — رادار\n${'═'.repeat(42)}\n`;
+  r+=`الرابط: ${url}\n`;r+=`درجة الخطورة: ${score}% (${v})\n`;
+  r+=`التاريخ: ${new Date().toLocaleString('ar-SA')}\n\n`;
+  r+=`نتائج الفحص:\n${'─'.repeat(30)}\n`;
+  checks.forEach(c=>r+=`${c.ico} ${c.name}: ${c.pill}\n   ${c.detail}\n`);
+  if(threats.length){r+=`\nالتهديدات:\n${'─'.repeat(30)}\n`;threats.forEach(t=>r+=`⛔ ${t}\n`)}
+  r+=`\nتحقق خارجي:\n• https://virustotal.com\n• https://transparencyreport.google.com/safe-browsing\n© رادار`;
+  navigator.clipboard.writeText(r).then(()=>{
+    const b=document.querySelector('.action-row .primary');
+    const o=b.innerHTML;b.innerHTML='✅ تم النسخ!';
+    setTimeout(()=>b.innerHTML=o,2500);
+  });
+}
+
+/* Enter key */
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')startScan()});
+</script>
+</body>
+</html>
